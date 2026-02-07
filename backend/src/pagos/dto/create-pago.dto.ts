@@ -19,6 +19,9 @@ export class CreatePagoDto {
     @IsDateString()
     fecha_pago: Date;
 
+    @IsString()
+    moneda: string;
+
     @IsNumber()
     importe: number;
 

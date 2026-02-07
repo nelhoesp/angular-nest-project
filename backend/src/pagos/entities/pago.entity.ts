@@ -24,6 +24,9 @@ export class Pago {
     @Column()
     fecha_pago: Date;
 
+    @Column()
+    moneda: string;
+
     @Column('decimal', { precision: 10, scale: 2 })
     importe: number;
 
