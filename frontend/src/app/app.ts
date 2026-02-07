@@ -124,7 +124,7 @@ export class App implements OnInit {
 
     this.pagosService.uploadExcel(file).subscribe({
       next: (response) => {
-        this.uploadSuccess.set(`Excel importado exitosamente: ${response.created} registros creados`);
+        this.uploadSuccess.set(`Excel importado exitosamente: ${response.success} registros creados`);
         this.uploadingExcel.set(false);
         this.loadPagos();
         setTimeout(() => {
