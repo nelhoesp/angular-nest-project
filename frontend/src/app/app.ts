@@ -25,6 +25,7 @@ export class App implements OnInit {
   limit = signal(10);
   totalPages = signal(0);
   total = signal(0);
+  pageInput = signal('');
 
   // Filtros
   fechaDesde = signal('');
@@ -37,6 +38,11 @@ export class App implements OnInit {
   formError = signal<string | null>(null);
   formSuccess = signal<string | null>(null);
   editingId = signal<number | null>(null);
+
+  // Excel Upload
+  uploadingExcel = signal(false);
+  uploadSuccess = signal<string | null>(null);
+  uploadError = signal<string | null>(null);
 
   // Campos del formulario
   formPoliza = signal('');
@@ -92,6 +98,50 @@ export class App implements OnInit {
     this.limit.set(parseInt(select.value));
     this.currentPage.set(1);
     this.loadPagos();
+  }
+
+  goToSpecificPage() {
+    const pageNumber = parseInt(this.pageInput());
+    if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= this.totalPages()) {
+      this.goToPage(pageNumber);
+      this.pageInput.set('');
+    }
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.uploadExcelFile(file);
+      input.value = ''; // Reset input
+    }
+  }
+
+  uploadExcelFile(file: File) {
+    this.uploadingExcel.set(true);
+    this.uploadError.set(null);
+    this.uploadSuccess.set(null);
+
+    this.pagosService.uploadExcel(file).subscribe({
+      next: (response) => {
+        this.uploadSuccess.set(`Excel importado exitosamente: ${response.created} registros creados`);
+        this.uploadingExcel.set(false);
+        this.loadPagos();
+        setTimeout(() => {
+          this.uploadSuccess.set(null);
+        }, 5000);
+      },
+      error: (err) => {
+        this.uploadError.set(err.error?.message || 'Error al importar el archivo Excel');
+        this.uploadingExcel.set(false);
+        console.error(err);
+      }
+    });
+  }
+
+  triggerFileInput() {
+    const fileInput = document.getElementById('excelFileInput') as HTMLInputElement;
+    fileInput?.click();
   }
 
   applyFilters() {

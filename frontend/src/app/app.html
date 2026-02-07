@@ -228,13 +228,51 @@
       </div>
     </div>
 
-    <div class="mb-6 w-full flex justify-end">
+    <!-- Mensajes de Excel Upload -->
+    @if (uploadSuccess()) {
+      <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+        {{ uploadSuccess() }}
+      </div>
+    }
+
+    @if (uploadError()) {
+      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        {{ uploadError() }}
+      </div>
+    }
+
+    <div class="mb-6 w-full flex justify-end gap-3">
+      <input
+        type="file"
+        id="excelFileInput"
+        accept=".xlsx,.xls"
+        (change)="onFileSelected($event)"
+        class="hidden"
+      />
       <button
-          (click)="toggleForm()"
-          class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer"
-        >
-          <span>{{ showForm() ? 'Cancelar' : '+ Nuevo Pago' }}</span>
-        </button>
+        (click)="triggerFileInput()"
+        [disabled]="uploadingExcel()"
+        class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        @if (uploadingExcel()) {
+          <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Importando...</span>
+        } @else {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span>Importar Excel</span>
+        }
+      </button>
+      <button
+        (click)="toggleForm()"
+        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer"
+      >
+        <span>{{ showForm() ? 'Cancelar' : '+ Nuevo Pago' }}</span>
+      </button>
     </div>
 
     <!-- Tabla -->
@@ -368,6 +406,24 @@
                 <option value="20">20 por página</option>
                 <option value="50">50 por página</option>
               </select>
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-700">Ir a:</label>
+                <input
+                  type="number"
+                  [(ngModel)]="pageInput"
+                  placeholder="#"
+                  min="1"
+                  [max]="totalPages()"
+                  class="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  (keyup.enter)="goToSpecificPage()"
+                />
+                <button
+                  (click)="goToSpecificPage()"
+                  class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Ir
+                </button>
+              </div>
             </div>
             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
               <button
