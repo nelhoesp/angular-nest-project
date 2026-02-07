@@ -79,4 +79,12 @@ export class PagosService {
   createPago(pago: CreatePago): Observable<Pago> {
     return this.http.post<Pago>(this.apiUrl, pago);
   }
+
+  updatePago(id: number, pago: CreatePago): Observable<Pago> {
+    return this.http.patch<Pago>(`${this.apiUrl}/${id}`, pago);
+  }
+
+  deletePago(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

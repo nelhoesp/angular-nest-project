@@ -36,6 +36,7 @@ export class App implements OnInit {
   formLoading = signal(false);
   formError = signal<string | null>(null);
   formSuccess = signal<string | null>(null);
+  editingId = signal<number | null>(null);
 
   // Campos del formulario
   formPoliza = signal('');
@@ -113,7 +114,42 @@ export class App implements OnInit {
     }
   }
 
+  editPago(pago: Pago) {
+    this.editingId.set(pago.id);
+    this.formPoliza.set(pago.poliza.numero_poliza);
+    this.formCuota.set(pago.cuota);
+    this.formEmpresaPagadora.set(pago.empresa_pagadora);
+    this.formMedioPago.set(pago.medio_pago);
+    this.formBanco.set(pago.banco);
+    this.formNumeroOperacion.set(pago.numero_operacion);
+    this.formFechaPago.set(new Date(pago.fecha_pago).toISOString().split('T')[0]);
+    this.formMoneda.set(pago.moneda);
+    this.formImporte.set(pago.importe);
+    this.formTipoCambio.set(pago.tipo_cambio);
+    this.formEquivalenteSoles.set(pago.equivalente_soles);
+    this.showForm.set(true);
+    this.formError.set(null);
+    this.formSuccess.set(null);
+  }
+
+  deletePago(id: number) {
+    if (!confirm('¿Está seguro de eliminar este pago?')) {
+      return;
+    }
+
+    this.pagosService.deletePago(id).subscribe({
+      next: () => {
+        this.loadPagos();
+      },
+      error: (err) => {
+        alert('Error al eliminar el pago: ' + (err.error?.message || 'Error desconocido'));
+        console.error(err);
+      }
+    });
+  }
+
   resetForm() {
+    this.editingId.set(null);
     this.formPoliza.set('');
     this.formCuota.set('');
     this.formEmpresaPagadora.set('');
@@ -139,7 +175,7 @@ export class App implements OnInit {
     this.formError.set(null);
     this.formSuccess.set(null);
 
-    const newPago: CreatePago = {
+    const pagoData: CreatePago = {
       poliza: this.formPoliza(),
       cuota: this.formCuota(),
       empresa_pagadora: this.formEmpresaPagadora(),
@@ -153,9 +189,14 @@ export class App implements OnInit {
       equivalente_soles: this.formEquivalenteSoles()
     };
 
-    this.pagosService.createPago(newPago).subscribe({
+    const operation = this.editingId()
+      ? this.pagosService.updatePago(this.editingId()!, pagoData)
+      : this.pagosService.createPago(pagoData);
+
+    operation.subscribe({
       next: () => {
-        this.formSuccess.set('Pago registrado exitosamente');
+        const message = this.editingId() ? 'Pago actualizado exitosamente' : 'Pago registrado exitosamente';
+        this.formSuccess.set(message);
         this.formLoading.set(false);
         this.resetForm();
         this.loadPagos();
@@ -164,7 +205,7 @@ export class App implements OnInit {
         }, 2000);
       },
       error: (err) => {
-        this.formError.set(err.error?.message || 'Error al crear el pago');
+        this.formError.set(err.error?.message || 'Error al procesar el pago');
         this.formLoading.set(false);
         console.error(err);
       }
