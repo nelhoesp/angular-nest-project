@@ -43,8 +43,26 @@ export class PagosService {
     return await this.pagoRepository.save(pago);
   }
 
-  async findAll() {
-    return await this.pagoRepository.find();
+  async findAll(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.pagoRepository.findAndCount({
+      take: limit,
+      skip: skip,
+      order: {
+        created_at: 'DESC',
+      },
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: number) {
