@@ -187,9 +187,9 @@ export class PagosService {
             numero_operacion: (row['__EMPTY_7'] || row['# OP.'])?.toString() || '',
             fecha_pago: fechaPago,
             moneda: (row['__EMPTY_9'] || row['MONEDA'])?.toString() || '',
-            importe: parseFloat(row['__EMPTY_10'] || row['IMPORTE']) || 0,
+            importe: parseFloat((row['__EMPTY_10'] || row['IMPORTE']).replace(/,/g, '')) || 0,
             tipo_cambio: parseFloat(row['__EMPTY_11'] || row['T.C.']) || 0,
-            equivalente_soles: parseFloat(row['__EMPTY_12'] || row['EQUIV. SOLES']) || 0,
+            equivalente_soles: parseFloat((row['__EMPTY_11'] || row['EQUIV. SOLES']).replace(/,/g, '')) || 0,
             poliza,
           });
 
