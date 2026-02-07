@@ -31,6 +31,20 @@ export interface PagosResponse {
   };
 }
 
+export interface CreatePago {
+  cuota: string;
+  empresa_pagadora: string;
+  medio_pago: string;
+  banco: string;
+  numero_operacion: string;
+  fecha_pago: string;
+  moneda: string;
+  importe: number;
+  tipo_cambio: number;
+  equivalente_soles: number;
+  poliza: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -60,5 +74,9 @@ export class PagosService {
     }
 
     return this.http.get<PagosResponse>(this.apiUrl, { params });
+  }
+
+  createPago(pago: CreatePago): Observable<Pago> {
+    return this.http.post<Pago>(this.apiUrl, pago);
   }
 }
