@@ -18,8 +18,11 @@ export class PagosController {
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('fechaDesde') fechaDesde?: string,
+    @Query('fechaHasta') fechaHasta?: string,
+    @Query('empresaPagadora') empresaPagadora?: string,
   ) {
-    return this.pagosService.findAll(page, limit);
+    return this.pagosService.findAll(page, limit, fechaDesde, fechaHasta, empresaPagadora);
   }
 
   @Get(':id')

@@ -3,7 +3,7 @@ import { CreatePagoDto } from './dto/create-pago.dto';
 import { UpdatePagoDto } from './dto/update-pago.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Pago } from './entities/pago.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Poliza } from 'src/polizas/entities/poliza.entity';
 import * as XLSX from 'xlsx';
 
@@ -43,10 +43,33 @@ export class PagosService {
     return await this.pagoRepository.save(pago);
   }
 
-  async findAll(page: number = 1, limit: number = 10) {
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    fechaDesde?: string,
+    fechaHasta?: string,
+    empresaPagadora?: string,
+  ) {
     const skip = (page - 1) * limit;
 
+    const where: any = {};
+
+    // Filtro por rango de fechas
+    if (fechaDesde && fechaHasta) {
+      where.fecha_pago = Between(new Date(fechaDesde), new Date(fechaHasta));
+    } else if (fechaDesde) {
+      where.fecha_pago = Between(new Date(fechaDesde), new Date());
+    } else if (fechaHasta) {
+      where.fecha_pago = Between(new Date(0), new Date(fechaHasta));
+    }
+
+    // Filtro por empresa pagadora
+    if (empresaPagadora) {
+      where.empresa_pagadora = empresaPagadora;
+    }
+
     const [data, total] = await this.pagoRepository.findAndCount({
+      where,
       take: limit,
       skip: skip,
       order: {
