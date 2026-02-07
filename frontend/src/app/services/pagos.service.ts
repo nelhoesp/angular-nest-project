@@ -10,6 +10,7 @@ export interface Pago {
   banco: string;
   numero_operacion: string;
   fecha_pago: Date;
+  moneda: string;
   importe: number;
   tipo_cambio: number;
   equivalente_soles: number;
