@@ -38,7 +38,7 @@ Aplicación full-stack para la gestión de pagos de pólizas con importación de
    
    El frontend estará disponible en `http://localhost:4200`
 
-## 🛠️ Decisiones Técnicas
+## Decisiones Técnicas
 
 ### Backend
 - **NestJS**: Framework con arquitectura modular, inyección de dependencias y soporte TypeScript nativo
