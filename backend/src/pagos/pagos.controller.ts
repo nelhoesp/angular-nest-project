@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
 import { PagosService } from './pagos.service';
 import { CreatePagoDto } from './dto/create-pago.dto';
 import { UpdatePagoDto } from './dto/update-pago.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Multer } from 'multer';
 
 @Controller('pagos')
 export class PagosController {
@@ -30,5 +32,23 @@ export class PagosController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.pagosService.remove(+id);
+  }
+
+  @Post('upload-excel')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadExcel(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({ 
+            fileType: /(spreadsheetml\.sheet|ms-excel)/ 
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return await this.pagosService.processExcelFile(file.buffer);
   }
 }

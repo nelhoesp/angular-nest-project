@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Pago } from './entities/pago.entity';
 import { Repository } from 'typeorm';
 import { Poliza } from 'src/polizas/entities/poliza.entity';
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class PagosService {
@@ -79,5 +80,94 @@ export class PagosService {
 
   async remove(id: number) {
     return await this.pagoRepository.delete(id);
+  }
+
+  async processExcelFile(buffer: Buffer) {
+    try {
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+
+      const data = XLSX.utils.sheet_to_json(sheet, { 
+        range: 2,
+        raw: false
+      });
+
+      if (data.length === 0) {
+        throw new BadRequestException('El archivo Excel está vacío');
+      }
+
+      const results = {
+        success: 0,
+        errors: [] as string[],
+      };
+
+      for (let i = 0; i < data.length; i++) {
+        const row: any = data[i];
+        const rowNumber = i + 4;
+
+        try {
+          const numeroPoliza = row['__EMPTY_1'] || row['N° DOCUMENTO'] || row['N\u00b0 DOCUMENTO'];
+          if (!numeroPoliza) {
+            results.errors.push(`Fila ${rowNumber}: Campo 'N° DOCUMENTO' es requerido`);
+            continue;
+          }
+
+          let poliza = await this.polizaRepository.findOne({
+            where: { numero_poliza: numeroPoliza.toString() },
+          });
+
+          if (!poliza) {
+            poliza = this.polizaRepository.create({
+              numero_poliza: numeroPoliza.toString(),
+            });
+            poliza = await this.polizaRepository.save(poliza);
+          }
+
+          let fechaPago: Date;
+          const fechaValue = row['__EMPTY_8'] || row['FECHA'];
+          if (fechaValue) {
+            if (typeof fechaValue === 'number') {
+              const parsedDate = XLSX.SSF.parse_date_code(fechaValue);
+              fechaPago = new Date(parsedDate.y, parsedDate.m - 1, parsedDate.d);
+            } else {
+              fechaPago = new Date(fechaValue);
+            }
+          } else {
+            fechaPago = new Date();
+          }
+
+          const pago = this.pagoRepository.create({
+            cuota: (row['__EMPTY_2'] || row['CUOTA'])?.toString() || '',
+            empresa_pagadora: (row['__EMPTY_3'] || row['EMPRESA QUE PAGA'])?.toString() || '',
+            medio_pago: (row['__EMPTY_5'] || row['MEDIO'])?.toString() || '',
+            banco: (row['__EMPTY_6'] || row['BANCO'])?.toString() || '',
+            numero_operacion: (row['__EMPTY_7'] || row['# OP.'])?.toString() || '',
+            fecha_pago: fechaPago,
+            importe: parseFloat(row['__EMPTY_10'] || row['IMPORTE']) || 0,
+            tipo_cambio: parseFloat(row['__EMPTY_11'] || row['T.C.']) || 0,
+            equivalente_soles: parseFloat(row['__EMPTY_12'] || row['EQUIV. SOLES']) || 0,
+            poliza,
+          });
+
+          await this.pagoRepository.save(pago);
+          results.success++;
+        } catch (error) {
+          results.errors.push(
+            `Fila ${rowNumber}: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+          );
+        }
+      }
+
+      return {
+        message: `Proceso completado. ${results.success} registros importados exitosamente.`,
+        success: results.success,
+        errors: results.errors.length > 0 ? results.errors : undefined,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Error al procesar el archivo Excel: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      );
+    }
   }
 }
